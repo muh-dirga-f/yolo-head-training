@@ -86,8 +86,8 @@ class YOLOSplitter:
                 logger.info("No model specified, using pretrained yolov8m")
                 self.model = YOLO('yolov8m.pt')
 
-        # Mengakses model PyTorch internal
-        model = self.model.model
+            # Mengakses model PyTorch internal
+            model = self.model.model
 
         # Backbone layers (dari input sampai sebelum SPPF)
         backbone_modules = list(model.model[:9])
