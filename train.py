@@ -16,6 +16,7 @@ class DetectorTrainer:
             model_type: Tipe model YOLOv8 ('yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', etc.)
         """
         self.model_type = model_type
+        self.backbone_layers = 10  # Jumlah layer backbone YOLOv8
 
     def prepare_model(self):
         """
@@ -26,11 +27,9 @@ class DetectorTrainer:
         # Load pretrained model
         self.model = YOLO(self.model_type)
 
-        # Freeze hanya backbone (biasanya 10 layer pertama untuk YOLOv8)
+        # Freeze hanya backbone
         model_list = self.model.model.model
-        backbone_layers = 10  # Jumlah layer backbone YOLOv8
-        
-        for i in range(backbone_layers):
+        for i in range(self.backbone_layers):
             for param in model_list[i].parameters():
                 param.requires_grad = False
 
@@ -62,7 +61,7 @@ class DetectorTrainer:
         )
 
         # Simpan neck dan head yang telah dilatih
-        trained_neck_head = torch.nn.Sequential(*self.model.model.model[backbone_layers:])
+        trained_neck_head = torch.nn.Sequential(*self.model.model.model[self.backbone_layers:])
         os.makedirs('trained_models', exist_ok=True)
         torch.save(trained_neck_head, 'trained_models/trained_neck_head.pt')
         logger.info("Training selesai. Neck dan head model disimpan di trained_models/trained_neck_head.pt")
