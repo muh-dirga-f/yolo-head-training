@@ -65,14 +65,21 @@ class YOLOSplitter:
         self.neck = None
         self.head = None
 
-    def split_model(self, model_path='yolov8m.pt'):
+    def split_model(self, model_path=None):
         """
         Memecah model menjadi backbone, neck dan head
         Args:
-            model_path: Path ke model YOLOv8 (.pt file)
+            model_path: Path ke model YOLOv8 (.pt file) atau None untuk menggunakan pretrained
         """
-        logger.info(f"Loading and splitting model: {model_path}")
-        self.model = YOLO(model_path)
+        if model_path and os.path.exists(model_path):
+            logger.info(f"Loading and splitting custom model: {model_path}")
+            self.model = YOLO(model_path)
+        else:
+            if model_path:
+                logger.warning(f"Model file {model_path} not found, using pretrained yolov8m")
+            else:
+                logger.info("No model specified, using pretrained yolov8m")
+            self.model = YOLO('yolov8m.pt')
 
         # Mengakses model PyTorch internal
         model = self.model.model
