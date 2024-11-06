@@ -89,24 +89,28 @@ class YOLOSplitter:
             # Mengakses model PyTorch internal
             model = self.model.model
 
-        # Backbone layers (dari input sampai sebelum SPPF)
-        backbone_modules = list(model.model[:9])
-        self.backbone = BackboneModule(backbone_modules)
+            # Backbone layers (dari input sampai sebelum SPPF)
+            backbone_modules = list(model.model[:9])
+            self.backbone = BackboneModule(backbone_modules)
 
-        # Neck layers (SPPF sampai sebelum Detect)
-        neck_modules = list(model.model[9:-1])
-        self.neck = NeckModule(neck_modules)
+            # Neck layers (SPPF sampai sebelum Detect)
+            neck_modules = list(model.model[9:-1])
+            self.neck = NeckModule(neck_modules)
 
-        # Head (Detect layer)
-        self.head = model.model[-1]
+            # Head (Detect layer)
+            self.head = model.model[-1]
 
-        # Simpan names dari model asli ke head
-        if hasattr(model, 'names') and model.names:
-            self.head.names = model.names
+            # Simpan names dari model asli ke head
+            if hasattr(model, 'names') and model.names:
+                self.head.names = model.names
 
-        # Unload YOLO model to free memory
-        self.model = None
-        torch.cuda.empty_cache()
+            # Unload YOLO model to free memory
+            self.model = None
+            torch.cuda.empty_cache()
+
+        except Exception as e:
+            logger.error(f"Error splitting model: {str(e)}")
+            raise RuntimeError(f"Failed to split model: {str(e)}")
 
         return self.backbone, self.neck, self.head
 
