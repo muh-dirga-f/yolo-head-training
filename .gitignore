@@ -1,0 +1,8 @@
+.aider*
+.env
+output
+split_models
+split_trained_models
+yolo-vscode.pt
+yolov8m.pt
+__pycache__
