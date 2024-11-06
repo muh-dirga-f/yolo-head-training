@@ -28,7 +28,7 @@ def run_interactive():
                 logger.info("Model berhasil dipecah dan disimpan")
 
             elif choice == '2':
-                splitter.load_split_models(load_dir="split_trained_models")
+                splitter.load_split_models(load_dir="split_models")
 
             elif choice == '3':
                 if not all([splitter.backbone, splitter.neck, splitter.head]):
