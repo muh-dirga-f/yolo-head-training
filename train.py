@@ -1,8 +1,8 @@
 from ultralytics import YOLO
 import torch
+import torch.nn as nn
 import logging
 import os
-from model_splitter import YOLOSplitter
 
 # Konfigurasi logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -61,20 +61,24 @@ class DetectorTrainer:
             exist_ok=True
         )
 
-        # Gunakan YOLOSplitter untuk memisahkan dan menyimpan model
-        splitter = YOLOSplitter()
-        splitter.model = self.model  # Gunakan model yang sudah dilatih
-        
-        # Pisahkan model
-        backbone, neck, head = splitter.split_model(self.model_type)
-        
-        # Simpan neck dan head yang telah dilatih
+        # Simpan model yang telah dilatih
         os.makedirs('trained_models', exist_ok=True)
-        torch.save(neck, 'trained_models/trained_neck.pt')
-        torch.save(head, 'trained_models/trained_head.pt')
+        
+        # Dapatkan model internal
+        model_list = self.model.model.model
+        
+        # Pisahkan dan simpan neck (layer 10-23)
+        neck_layers = list(model_list[self.backbone_layers:24])
+        trained_neck = nn.Sequential(*neck_layers)
+        torch.save(trained_neck.state_dict(), 'trained_models/trained_neck.pt')
+        
+        # Pisahkan dan simpan head (layer 24 dst)
+        head_layers = list(model_list[24:])
+        trained_head = nn.Sequential(*head_layers)
+        torch.save(trained_head.state_dict(), 'trained_models/trained_head.pt')
         
         # Bersihkan memori
-        splitter.unload_models()
+        torch.cuda.empty_cache()
         
         logger.info("Training selesai. Model tersimpan:")
         logger.info("- Neck: trained_models/trained_neck.pt")
