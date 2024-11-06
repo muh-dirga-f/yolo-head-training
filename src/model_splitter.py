@@ -70,16 +70,21 @@ class YOLOSplitter:
         Memecah model menjadi backbone, neck dan head
         Args:
             model_path: Path ke model YOLOv8 (.pt file) atau None untuk menggunakan pretrained
+        Returns:
+            tuple: (backbone, neck, head) komponen model yang telah dipisah
+        Raises:
+            FileNotFoundError: Jika file model tidak ditemukan
+            RuntimeError: Jika terjadi kesalahan saat memuat model
         """
-        if model_path and os.path.exists(model_path):
-            logger.info(f"Loading and splitting custom model: {model_path}")
-            self.model = YOLO(model_path)
-        else:
+        try:
             if model_path:
-                logger.warning(f"Model file {model_path} not found, using pretrained yolov8m")
+                if not os.path.exists(model_path):
+                    raise FileNotFoundError(f"Model file not found: {model_path}")
+                logger.info(f"Loading and splitting custom model: {model_path}")
+                self.model = YOLO(model_path)
             else:
                 logger.info("No model specified, using pretrained yolov8m")
-            self.model = YOLO('yolov8m.pt')
+                self.model = YOLO('yolov8m.pt')
 
         # Mengakses model PyTorch internal
         model = self.model.model
@@ -110,14 +115,28 @@ class YOLOSplitter:
         Menyimpan model yang telah dipecah
         Args:
             save_dir: Direktori untuk menyimpan model
+        Raises:
+            RuntimeError: Jika model belum dipecah atau terjadi kesalahan saat menyimpan
         """
-        import os
-        os.makedirs(save_dir, exist_ok=True)
+        if not all([self.backbone, self.neck, self.head]):
+            raise RuntimeError("Model must be split before saving. Call split_model() first.")
 
-        # Simpan model lengkap, bukan hanya state dict
-        torch.save(self.backbone, f'{save_dir}/backbone.pt')
-        torch.save(self.neck, f'{save_dir}/neck.pt')
-        torch.save(self.head, f'{save_dir}/head.pt')
+        try:
+            os.makedirs(save_dir, exist_ok=True)
+            logger.info(f"Saving models to {save_dir}")
+
+            # Simpan model lengkap dengan error handling
+            for name, model in [
+                ('backbone', self.backbone),
+                ('neck', self.neck),
+                ('head', self.head)
+            ]:
+                save_path = os.path.join(save_dir, f"{name}.pt")
+                torch.save(model, save_path)
+                logger.info(f"Saved {name} to {save_path}")
+
+        except Exception as e:
+            raise RuntimeError(f"Error saving models: {str(e)}")
 
     def load_split_models(self, load_dir='split_models/'):
         """
