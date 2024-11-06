@@ -7,10 +7,11 @@ import os
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class HeadTrainer:
+class DetectorTrainer:
     def __init__(self, model_type='yolov8m.pt'):
         """
         Inisialisasi trainer dengan model YOLOv8 yang dipilih
+        Hanya backbone yang akan di-freeze, neck dan head akan dilatih
         Args:
             model_type: Tipe model YOLOv8 ('yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', etc.)
         """
@@ -25,13 +26,15 @@ class HeadTrainer:
         # Load pretrained model
         self.model = YOLO(self.model_type)
 
-        # Freeze backbone dan neck
+        # Freeze hanya backbone (biasanya 10 layer pertama untuk YOLOv8)
         model_list = self.model.model.model
-        for i in range(len(model_list) - 1):  # Semua layer kecuali head
+        backbone_layers = 10  # Jumlah layer backbone YOLOv8
+        
+        for i in range(backbone_layers):
             for param in model_list[i].parameters():
                 param.requires_grad = False
 
-        logger.info("Model siap untuk training (hanya head layer yang trainable)")
+        logger.info("Model siap untuk training (neck dan head layer trainable)")
 
     def train(self, data_yaml, epochs=100, imgsz=640, batch=16):
         """
@@ -58,17 +61,17 @@ class HeadTrainer:
             exist_ok=True
         )
 
-        # Simpan head yang telah dilatih
-        trained_head = self.model.model.model[-1]
+        # Simpan neck dan head yang telah dilatih
+        trained_neck_head = torch.nn.Sequential(*self.model.model.model[backbone_layers:])
         os.makedirs('trained_models', exist_ok=True)
-        torch.save(trained_head, 'trained_models/trained_head.pt')
-        logger.info("Training selesai. Head model disimpan di trained_models/trained_head.pt")
+        torch.save(trained_neck_head, 'trained_models/trained_neck_head.pt')
+        logger.info("Training selesai. Neck dan head model disimpan di trained_models/trained_neck_head.pt")
 
         return results
 
 def main():
     # Inisialisasi trainer dengan model YOLOv8m
-    trainer = HeadTrainer('yolov8m.pt')
+    trainer = DetectorTrainer('yolov8m.pt')
 
     # Persiapkan model
     trainer.prepare_model()
