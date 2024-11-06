@@ -17,7 +17,7 @@ class DetectorTrainer:
             model_type: Tipe model YOLOv8 ('yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', etc.)
         """
         self.model_type = model_type
-        self.backbone_layers = 9  # Jumlah layer backbone YOLOv8 (0-8)
+        self.backbone_layers = 10  # Jumlah layer backbone YOLOv8 (0-9)
 
     def prepare_model(self):
         """
@@ -63,22 +63,22 @@ class DetectorTrainer:
 
         # Simpan model yang telah dilatih
         os.makedirs('trained_models', exist_ok=True)
-        
+
         # Dapatkan model internal
         model_list = self.model.model.model
-        
+
         # Pisahkan dan simpan neck (layer 9 sampai sebelum terakhir)
-        neck_layers = list(model_list[9:-1])
+        neck_layers = list(model_list[10:-1])
         trained_neck = nn.Sequential(*neck_layers)
         torch.save(trained_neck.state_dict(), 'trained_models/trained_neck.pt')
-        
+
         # Pisahkan dan simpan head (layer terakhir)
         head_layer = model_list[-1]
         torch.save(head_layer.state_dict(), 'trained_models/trained_head.pt')
-        
+
         # Bersihkan memori
         torch.cuda.empty_cache()
-        
+
         logger.info("Training selesai. Model tersimpan:")
         logger.info("- Neck: trained_models/trained_neck.pt")
         logger.info("- Head: trained_models/trained_head.pt")
