@@ -60,11 +60,20 @@ class DetectorTrainer:
             exist_ok=True
         )
 
-        # Simpan neck dan head yang telah dilatih
-        trained_neck_head = torch.nn.Sequential(*self.model.model.model[self.backbone_layers:])
+        # Simpan neck dan head yang telah dilatih secara terpisah
         os.makedirs('trained_models', exist_ok=True)
-        torch.save(trained_neck_head, 'trained_models/trained_neck_head.pt')
-        logger.info("Training selesai. Neck dan head model disimpan di trained_models/trained_neck_head.pt")
+        
+        # Pisahkan dan simpan neck (layer 10-23)
+        trained_neck = torch.nn.Sequential(*self.model.model.model[self.backbone_layers:24])
+        torch.save(trained_neck, 'trained_models/trained_neck.pt')
+        
+        # Pisahkan dan simpan head (layer 24 dst)
+        trained_head = torch.nn.Sequential(*self.model.model.model[24:])
+        torch.save(trained_head, 'trained_models/trained_head.pt')
+        
+        logger.info("Training selesai. Model tersimpan:")
+        logger.info("- Neck: trained_models/trained_neck.pt")
+        logger.info("- Head: trained_models/trained_head.pt")
 
         return results
 
